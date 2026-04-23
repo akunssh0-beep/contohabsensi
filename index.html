@@ -20,7 +20,7 @@
     <header class="hero-gradient text-white pt-10 pb-24 px-6 rounded-b-[3.5rem] shadow-lg">
         <div class="flex justify-between items-start mb-6">
             <div>
-                <h1 class="font-black text-2xl tracking-tighter italic uppercase">Masook AI</h1>
+                <h1 class="font-black text-2xl tracking-tighter italic uppercase text-white">Masook AI</h1>
                 <p class="text-[10px] font-bold opacity-80 uppercase tracking-widest mt-1">Sistem Presensi Digital</p>
             </div>
             <button onclick="window.location.href='profil.html'" class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 active:scale-90 transition-all">
@@ -42,33 +42,31 @@
             </div>
             
             <h2 id="display-name" class="font-black text-slate-800 text-xl tracking-tighter uppercase italic">Siap Untuk Absen?</h2>
-            <p id="display-nip" class="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mt-1 leading-none">Silahkan Lakukan Pemindaian</p>
+            <p id="display-nip" class="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mt-1 leading-none">Arahkan Wajah Ke Kamera</p>
             
             <div class="w-full h-[1px] bg-slate-50 my-6"></div>
 
-            <button onclick="window.location.href='scan.html'" class="action-btn w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-200">
-                Mulai Scan Wajah
+            <button onclick="window.location.href='scan.html'" class="action-btn w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-200 flex items-center justify-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                MULAI SCAN WAJAH
             </button>
         </div>
 
-        <div class="grid grid-cols-2 gap-4 mt-8">
-            <div class="flex flex-col gap-4">
-                <button onclick="prosesAbsen('MASUK')" id="btn-masuk" disabled class="action-btn flex flex-col items-center justify-center bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm opacity-50 cursor-not-allowed">
-                    <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xl mb-3">📍</div>
-                    <span class="font-black text-[10px] text-slate-400 uppercase tracking-widest">Presensi</span>
-                    <span class="font-black text-slate-800 text-lg uppercase italic">Masuk</span>
+        <div class="mt-8 px-2">
+            <h3 class="font-black text-slate-400 text-[10px] uppercase tracking-widest mb-4">Akses Cepat</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="window.location.href='profil.html'" class="bg-white p-5 rounded-3xl border border-slate-100 flex flex-col gap-2">
+                    <span class="text-xl">📊</span>
+                    <span class="font-bold text-slate-700 text-[11px] uppercase tracking-tight">Riwayat Saya</span>
                 </button>
-            </div>
-            <div class="flex flex-col gap-4">
-                <button onclick="prosesAbsen('PULANG')" id="btn-pulang" disabled class="action-btn flex flex-col items-center justify-center bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm opacity-50 cursor-not-allowed">
-                    <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xl mb-3">🏠</div>
-                    <span class="font-black text-[10px] text-slate-400 uppercase tracking-widest">Presensi</span>
-                    <span class="font-black text-slate-800 text-lg uppercase italic">Pulang</span>
+                <button onclick="window.location.href='dasbodadmin.html'" class="bg-white p-5 rounded-3xl border border-slate-100 flex flex-col gap-2">
+                    <span class="text-xl">📈</span>
+                    <span class="font-bold text-slate-700 text-[11px] uppercase tracking-tight">Statistik</span>
                 </button>
             </div>
         </div>
 
-        <div class="mt-10 text-center pb-10">
+        <div class="mt-12 text-center pb-10">
             <p class="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">Engine v3.5 by Adi.P</p>
             <p class="text-[9px] font-bold text-blue-400/50 uppercase tracking-widest">it.barokah.net</p>
         </div>
@@ -98,18 +96,21 @@
     </nav>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbzHHaHNY3KKqftUB4DkSKof4uG15dRl61AHqURfpUMpui9npiAfY6J6jURHc4n0QJXO/exec";
-        let currentUser = null;
-
         window.onload = () => {
-            const result = localStorage.getItem('scanned_user');
-            if (result) {
-                currentUser = JSON.parse(result);
-                updateUI(currentUser);
+            // Cek apakah ada user yang login sebelumnya di browser ini
+            const user = JSON.parse(localStorage.getItem('current_user'));
+            if (user) {
+                document.getElementById('display-name').innerText = user.nama;
+                document.getElementById('display-nip').innerText = "NIP: " + user.nip;
+                document.getElementById('icon-placeholder').classList.add('hidden');
+                const img = document.getElementById('img-profile');
+                img.src = user.foto || ""; 
+                img.classList.remove('hidden');
             }
         };
-
-        function updateUI(user) {
+    </script>
+</body>
+</html>
             document.getElementById('display-name').innerText = user.nama;
             document.getElementById('display-nip').innerText = "NIP: " + user.nip;
             document.getElementById('icon-placeholder').classList.add('hidden');
