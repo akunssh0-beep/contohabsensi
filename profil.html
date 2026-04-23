@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil Pegawai - Masook AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-50 p-6 flex flex-col items-center min-h-screen">
+
+    <div class="w-full max-w-sm bg-white rounded-[2.5rem] shadow-xl overflow-hidden mt-10">
+        <div class="bg-blue-600 p-8 text-center">
+            <div class="w-24 h-24 bg-white rounded-full mx-auto mb-4 border-4 border-white/20 overflow-hidden shadow-lg">
+                <img id="p-foto" src="" class="w-full h-full object-cover">
+            </div>
+            <h2 id="p-nama" class="text-white font-black text-xl uppercase italic tracking-tighter">Memuat Nama...</h2>
+            <p id="p-nip" class="text-blue-100 text-[10px] font-bold uppercase tracking-widest mt-1">NIP: ---</p>
+        </div>
+
+        <div class="p-8 space-y-6 text-center">
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status Kehadiran Hari Ini</p>
+                <h3 id="p-status" class="text-blue-600 font-black text-lg italic uppercase">Memproses...</h3>
+                <p id="p-waktu" class="text-slate-400 text-[10px] font-bold mt-1">Jam: --:--</p>
+            </div>
+
+            <button onclick="logout()" class="w-full bg-slate-800 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">
+                Keluar / Ganti Akun
+            </button>
+        </div>
+    </div>
+
+    <script>
+        window.onload = () => {
+            const data = localStorage.getItem('scanned_user');
+            if (!data) { window.location.href = 'index.html'; return; }
+            
+            const user = JSON.parse(data);
+            document.getElementById('p-nama').innerText = user.nama;
+            document.getElementById('p-nip').innerText = "NIP: " + user.nip;
+            document.getElementById('p-foto').src = user.foto;
+            document.getElementById('p-status').innerText = user.tipeAbsen;
+            document.getElementById('p-waktu').innerText = "Terdeteksi Jam: " + user.waktuLogin;
+        };
+
+        function logout() {
+            if(confirm("Apakah Anda ingin keluar?")) {
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('scanned_user');
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>

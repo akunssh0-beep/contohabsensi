@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Scanner - Masook AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0f172a; overflow: hidden; }
+        .cam-frame { width: 280px; height: 280px; border-radius: 50%; border: 4px solid #3b82f6; position: relative; overflow: hidden; }
+        .scan-line { position: absolute; width: 100%; height: 4px; background: #22c55e; animation: move 2.5s infinite ease-in-out; z-index: 10; }
+        @keyframes move { 0%, 100% { top: 0%; } 50% { top: 100%; } }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen text-center">
+
+    <div id="scanner-ui">
+        <h1 class="text-white font-black text-2xl uppercase italic mb-10 tracking-tighter">AI Face Scanner</h1>
+        <div class="cam-frame mx-auto mb-10">
+            <div class="scan-line"></div>
+            <video id="video" autoplay muted playsinline class="w-full h-full object-cover scale-x-[-1]"></video>
+        </div>
+        <p id="status-text" class="text-blue-400 text-[10px] font-black uppercase tracking-[0.3em]">Menyiapkan Sensor...</p>
+    </div>
+
+    <div id="verify-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/95 backdrop-blur-xl">
+        <div class="text-center">
+            <div class="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+            <h2 class="text-white font-black text-xl uppercase italic">Verifikasi Identitas</h2>
+            <p class="text-blue-400 text-[9px] font-black uppercase mt-2 tracking-widest">Mencocokkan Database it.barokah.net...</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbzHHaHNY3KKqftUB4DkSKof4uG15dRl61AHqURfpUMpui9npiAfY6J6jURHc4n0QJXO/exec";
+        let labeledDescriptors = [], userData = [], stream = null;
+
+        window.onload = async () => {
+            const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+            await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+            
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "get_pegawai" }) });
+            userData = await res.json();
+            labeledDescriptors = userData.map(d => new faceapi.LabeledFaceDescriptors(d.nip.toString(), [new Float32Array(JSON.parse(atob(d.descriptor)))]));
+            
+            document.getElementById('status-text').innerText = "Sensor Aktif - Hadapkan Wajah";
+            startCamera();
+        };
+
+        async function startCamera() {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            document.getElementById('video').srcObject = stream;
+            detectFace();
+        }
+
+        async function detectFace() {
+            const video = document.getElementById('video');
+            const interval = setInterval(async () => {
+                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+                if (detection && labeledDescriptors.length > 0) {
+                    const match = new faceapi.FaceMatcher(labeledDescriptors, 0.6).findBestMatch(detection.descriptor);
+                    if (match.label !== 'unknown') {
+                        clearInterval(interval);
+                        // 1. Matikan Kamera
+                        stream.getTracks().forEach(t => t.stop());
+                        // 2. Tampilkan Pop-up
+                        document.getElementById('scanner-ui').classList.add('hidden');
+                        document.getElementById('verify-modal').classList.remove('hidden');
+                        
+                        const user = userData.find(u => u.nip.toString() === match.label);
+                        
+                        // 3. Tentukan Waktu Otomatis
+                        const jam = new Date().getHours();
+                        user.tipeAbsen = jam < 12 ? "MASUK" : "PULANG";
+                        user.waktuLogin = new Date().toLocaleTimeString('id-ID');
+
+                        // 4. Simpan & Pindah
+                        setTimeout(() => {
+                            localStorage.setItem('isLoggedIn', 'true');
+                            localStorage.setItem('scanned_user', JSON.stringify(user));
+                            window.location.href = 'profil.html';
+                        }, 2000);
+                    }
+                }
+            }, 600);
+        }
+    </script>
+</body>
+</html>

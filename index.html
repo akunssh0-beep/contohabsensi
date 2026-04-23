@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masook AI - Kotabaru</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; }
+        .gradient-header { background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%); }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .bottom-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border-top: 1px solid rgba(0,0,0,0.05); }
+        .btn-pulse { animation: pulse-blue 2s infinite; }
+        @keyframes pulse-blue { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+    </style>
+</head>
+<body class="pb-24">
+
+    <div class="gradient-header pt-12 pb-24 px-6 rounded-b-[3rem] shadow-lg">
+        <div class="flex justify-between items-start">
+            <div>
+                <p class="text-blue-100 text-[10px] font-bold uppercase tracking-[0.2em]">Selamat Datang</p>
+                <h1 class="text-white font-black text-2xl tracking-tighter italic">MASOOK <span class="font-light">AI</span></h1>
+            </div>
+            <div id="gps-status" class="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 border border-white/30">
+                <div id="gps-dot" class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                <span id="gps-text" class="text-white text-[9px] font-bold uppercase tracking-wider">Mencari GPS...</span>
+            </div>
+        </div>
+    </div>
+
+    <main class="-mt-16 px-6">
+        <div class="glass-card p-8 rounded-[2.5rem] shadow-xl shadow-blue-900/5 text-center border border-white">
+            <div class="relative w-28 h-28 mx-auto mb-6">
+                <div class="w-full h-full rounded-full border-4 border-blue-50 p-1 bg-white shadow-inner overflow-hidden">
+                    <img id="img-profile" src="https://via.placeholder.com/150" class="w-full h-full object-cover rounded-full hidden">
+                    <div id="icon-placeholder" class="w-full h-full bg-slate-100 rounded-full flex items-center justify-center text-4xl text-slate-300"></div>
+                </div>
+                <div id="verify-badge" class="hidden absolute bottom-1 right-1 bg-green-500 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center text-white text-xs"></div>
+            </div>
+
+            <h2 id="display-name" class="font-black text-slate-800 text-xl tracking-tight uppercase italic">SIAP ABSENSI?</h2>
+            <p id="display-info" class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em] mt-2 mb-8">Silahkan Scan Wajah Anda</p>
+
+            <button onclick="window.location.href='scan.html'" class="btn-pulse w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-blue-200 active:scale-95 transition-all">
+                Mulai Pemindaian AI
+            </button>
+        </div>
+
+        <div class="mt-8 grid grid-cols-2 gap-4">
+            <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+                <p class="text-slate-400 text-[8px] font-black uppercase tracking-widest">Lokasi Kantor</p>
+                <p class="text-slate-700 text-[10px] font-bold mt-1 uppercase italic">PKM Sampanahan</p>
+            </div>
+            <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+                <p class="text-slate-400 text-[8px] font-black uppercase tracking-widest">Radius</p>
+                <p id="display-radius" class="text-slate-700 text-[10px] font-bold mt-1 uppercase italic">50 Meter</p>
+            </div>
+        </div>
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 bottom-nav px-8 py-5 flex justify-around items-center z-50">
+        <button onclick="window.location.reload()" class="flex flex-col items-center gap-1">
+            <span class="text-xl"></span>
+            <span class="text-[9px] font-black uppercase text-blue-600 tracking-tighter">Beranda</span>
+        </button>
+        <button onclick="window.location.href='rekapan.html'" class="flex flex-col items-center gap-1 opacity-30">
+            <span class="text-xl"></span>
+            <span class="text-[9px] font-black uppercase tracking-tighter">Riwayat</span>
+        </button>
+        <button onclick="window.location.href='daftarpetugas.html'" class="flex flex-col items-center gap-1 opacity-30">
+            <span class="text-xl"></span>
+            <span class="text-[9px] font-black uppercase tracking-tighter">Pegawai</span>
+        </button>
+        <button onclick="window.location.href='dasbodadmin.html'" class="flex flex-col items-center gap-1 opacity-30">
+            <span class="text-xl"></span>
+            <span class="text-[9px] font-black uppercase tracking-tighter">Admin</span>
+        </button>
+    </nav>
+
+    <script>
+        // Lokasi Puskesmas Sampanahan
+        const PKM_COORDS = { lat: -2.637022, lng: 116.203674 };
+        
+        window.onload = () => {
+            // SISTEM KUNCI: Cek jika sudah login
+            if (localStorage.getItem('isLoggedIn') === 'true') {
+                window.location.href = 'profil.html';
+                return;
+            }
+            
+            checkGPS();
+        };
+
+        function checkGPS() {
+            const dot = document.getElementById('gps-dot');
+            const txt = document.getElementById('gps-text');
+
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(pos => {
+                    const dist = calculateDistance(pos.coords.latitude, pos.coords.longitude, PKM_COORDS.lat, PKM_COORDS.lng);
+                    if (dist <= 50) { // Radius 50m
+                        dot.className = "w-2 h-2 bg-green-400 rounded-full";
+                        txt.innerText = "Area Puskesmas";
+                        txt.className = "text-green-400 text-[9px] font-bold uppercase tracking-wider";
+                    } else {
+                        dot.className = "w-2 h-2 bg-yellow-400 rounded-full";
+                        txt.innerText = "Luar Jangkauan";
+                        txt.className = "text-yellow-400 text-[9px] font-bold uppercase tracking-wider";
+                    }
+                }, () => {
+                    dot.className = "w-2 h-2 bg-red-500 rounded-full";
+                    txt.innerText = "GPS Error";
+                });
+            }
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const 1 = lat1 * Math.PI/180, 2 = lat2 * Math.PI/180;
+            const  = (lat2-lat1) * Math.PI/180,  = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(/2) * Math.sin(/2) + Math.cos(1) * Math.cos(2) * Math.sin(/2) * Math.sin(/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+    </script>
+</body>
+</html>
