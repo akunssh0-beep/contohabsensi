@@ -12,14 +12,13 @@
         .cam-frame { width: 280px; height: 280px; border-radius: 50%; border: 4px solid #3b82f6; position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(59, 130, 246, 0.4); }
         .scan-line { position: absolute; width: 100%; height: 3px; background: #22c55e; box-shadow: 0 0 20px #22c55e; animation: move 2.5s infinite ease-in-out; z-index: 10; }
         @keyframes move { 0%, 100% { top: 0%; } 50% { top: 100%; } }
-        @keyframes progress { 0% { width: 0%; } 100% { width: 100%; } }
     </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen p-6 text-center">
 
     <div id="camera-section">
         <h1 class="text-white font-black text-2xl uppercase tracking-tighter italic mb-2">AI Face Scanner</h1>
-        <p id="status-text" class="text-blue-400 text-[9px] font-black uppercase tracking-[0.3em] mb-10">Mempersiapkan Sensor...</p>
+        <p id="status-text" class="text-blue-400 text-[9px] font-black uppercase tracking-[0.3em] mb-10 italic">Menghubungkan Sensor it.barokah.net...</p>
 
         <div id="scanner-container" class="cam-frame mx-auto mb-10">
             <div class="scan-line"></div>
@@ -30,86 +29,106 @@
     </div>
 
     <div id="verify-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 backdrop-blur-xl p-8">
-        <div class="animate-pulse">
-            <div class="w-24 h-24 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-8"></div>
+        <div class="animate-pulse text-center">
+            <div class="w-20 h-20 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-8 shadow-lg shadow-blue-500/20"></div>
             <h2 class="text-white font-black text-2xl uppercase italic tracking-tighter">Memverifikasi ID</h2>
-            <p class="text-blue-400 text-[10px] font-black uppercase tracking-[0.4em] mt-4 italic">Mencocokkan Database it.barokah.net...</p>
-            <div class="w-48 h-1 bg-white/10 rounded-full mx-auto mt-8 overflow-hidden">
-                <div class="h-full bg-blue-600 animate-[progress_2s_linear]"></div>
-            </div>
+            <p id="modal-status" class="text-blue-400 text-[10px] font-black uppercase tracking-[0.4em] mt-4 italic">Sinkronisasi Database Cloud...</p>
         </div>
     </div>
 
     <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbzHHaHNY3KKqftUB4DkSKof4uG15dRl61AHqURfpUMpui9npiAfY6J6jURHc4n0QJXO/exec";
-    let stream;
-    let labeledDescriptors = [];
-    let userData = [];
+        const API_URL = "https://script.google.com/macros/s/AKfycbzHHaHNY3KKqftUB4DkSKof4uG15dRl61AHqURfpUMpui9npiAfY6J6jURHc4n0QJXO/exec";
+        let labeledDescriptors = [], userData = [], stream = null;
 
-    // Load Models & Data
-    Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model'),
-        faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model'),
-        faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model')
-    ]).then(fetchUsers);
-
-    async function fetchUsers() {
-        try {
-            const response = await fetch(API_URL + "?action=get_users");
-            userData = await response.json();
-            
-            labeledDescriptors = await Promise.all(
-                userData.map(async user => {
-                    if (!user.descriptor) return null;
-                    const descriptions = [new Float32Array(Object.values(user.descriptor))];
-                    return new faceapi.LabeledFaceDescriptors(user.nip.toString(), descriptions);
-                })
-            );
-            labeledDescriptors = labeledDescriptors.filter(d => d !== null);
-            startVideo();
-        } catch (e) {
-            alert("Gagal koneksi ke database it.barokah.net");
-        }
-    }
-
-    async function startVideo() {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-        document.getElementById('video').srcObject = stream;
-        detectFace();
-    }
-
-    async function detectFace() {
-        const video = document.getElementById('video');
-        const statusText = document.querySelector('.scan-status'); // Pastikan ada elemen status
-
-        const interval = setInterval(async () => {
-            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-                .withFaceLandmarks()
-                .withFaceDescriptor();
-
-            if (detection && labeledDescriptors.length > 0) {
-                const match = new faceapi.FaceMatcher(labeledDescriptors, 0.45).findBestMatch(detection.descriptor);
+        window.onload = async () => {
+            try {
+                // Memuat model AI
+                await faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+                await faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
                 
-                if (match.label !== 'unknown') {
-                    clearInterval(interval);
-                    
-                    // 1. Ambil data user
-                    const user = userData.find(u => u.nip.toString() === match.label);
-                    
-                    // 2. Tampilkan status sedang memproses
-                    document.getElementById('verify-modal').classList.remove('hidden');
-                    console.log("Wajah dikenali: " + user.nama);
+                // Ambil data pegawai
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "get_pegawai" }) });
+                userData = await res.json();
+                
+                // Konversi deskriptor wajah
+                labeledDescriptors = userData.map(d => {
+                    if(!d.descriptor) return null;
+                    return new faceapi.LabeledFaceDescriptors(d.nip.toString(), [new Float32Array(JSON.parse(atob(d.descriptor)))]);
+                }).filter(x => x);
 
-                    // 3. Jalankan Absen Otomatis (Tentukan Masuk atau Pulang berdasarkan waktu)
-                    await autoSubmitAbsen(user);
-                }
+                document.getElementById('status-text').innerText = "Sensor Aktif - Hadapkan Wajah";
+                startCamera();
+            } catch (e) {
+                document.getElementById('status-text').innerText = "Gagal Memuat Database Cloud";
             }
-        }, 600);
-    }
+        };
 
-    async function autoSubmitAbsen(user) {
-        // Tentukan tipe absen otomatis berdasarkan jam (Contoh: > 12:00 = PULANG)
-        const jamSekarang = new Date().getHours();
+        async function startCamera() {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            document.getElementById('video').srcObject = stream;
+            detectFace();
+        }
+
+        async function detectFace() {
+            const video = document.getElementById('video');
+            const interval = setInterval(async () => {
+                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+                
+                if (detection && labeledDescriptors.length > 0) {
+                    const match = new faceapi.FaceMatcher(labeledDescriptors, 0.45).findBestMatch(detection.descriptor);
+                    
+                    if (match.label !== 'unknown') {
+                        clearInterval(interval);
+                        const user = userData.find(u => u.nip.toString() === match.label);
+                        
+                        // Tampilkan Modal & Proses Absen
+                        document.getElementById('camera-section').classList.add('hidden');
+                        document.getElementById('verify-modal').classList.remove('hidden');
+                        
+                        await autoSubmitAbsen(user);
+                    }
+                }
+            }, 600);
+        }
+
+        async function autoSubmitAbsen(user) {
+            // Tentukan Tipe Absen Berdasarkan Jam (Leluasa diubah sesuai kebijakan Puskesmas)
+            const jam = new Date().getHours();
+            const tipe = (jam >= 12) ? "PULANG" : "MASUK";
+            
+            document.getElementById('modal-status').innerText = `Mencatat Absen ${tipe}...`;
+
+            try {
+                // Mengirim data ke Google Sheets Cloud
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "submit_absen",
+                        nip: user.nip,
+                        nama: user.nama,
+                        tipe: tipe
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === "success") {
+                    localStorage.setItem('current_user', JSON.stringify(user));
+                    stream.getTracks().forEach(t => t.stop());
+                    window.location.href = 'profil.html';
+                } else {
+                    alert("Gagal: " + result.message);
+                    window.location.href = 'index.html';
+                }
+            } catch (err) {
+                alert("Gangguan Jaringan Barokah Net");
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
         const tipeAbsen = (jamSekarang >= 12) ? "PULANG" : "MASUK";
 
         navigator.geolocation.getCurrentPosition(async (pos) => {
