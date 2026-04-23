@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masook Config - Puskesmas AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; user-select: none; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); }
+        .input-field { @apply w-full bg-slate-50 border-none px-5 py-4 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm; }
+        .label-style { @apply text-[10px] font-black text-slate-400 uppercase ml-4 mb-2 block tracking-widest; }
+        .toggle-bg { background: #e2e8f0; transition: background 0.3s; }
+        input:checked ~ .toggle-bg { background: #3b82f6; }
+    </style>
+</head>
+<body class="pb-24">
+
+    <header class="bg-slate-900 text-white p-8 text-center shadow-2xl rounded-b-[3rem]">
+        <h1 class="font-black text-2xl tracking-tighter uppercase italic">System Settings</h1>
+        <p class="text-[10px] opacity-60 uppercase font-black tracking-widest mt-1">Konfigurasi Engine v3.5</p>
+    </header>
+
+    <main class="max-w-md mx-auto p-6 -mt-8 space-y-6">
+        
+        <section class="glass-card p-6 rounded-[2.5rem] shadow-xl">
+            <div class="flex items-center justify-between mb-6 px-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl">📍</div>
+                    <h2 class="font-black text-slate-800 uppercase text-sm tracking-tight">GPS Geofencing</h2>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="cfg-gps-status" class="sr-only peer" onchange="toggleGpsFields()">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+            
+            <div id="gps-fields" class="space-y-4 transition-opacity duration-300">
+                <div>
+                    <label class="label-style">Latitude Kantor</label>
+                    <input type="text" id="cfg-lat" class="input-field">
+                </div>
+                <div>
+                    <label class="label-style">Longitude Kantor</label>
+                    <input type="text" id="cfg-lng" class="input-field">
+                </div>
+                <div>
+                    <label class="label-style">Radius (Meter)</label>
+                    <input type="number" id="cfg-radius" class="input-field">
+                </div>
+                <button onclick="getCurrentLocation()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-black text-[9px] uppercase tracking-widest active:scale-95">Update Titik GPS</button>
+            </div>
+        </section>
+
+        <section class="glass-card p-6 rounded-[2.5rem] shadow-xl">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-xl">⚙️</div>
+                <h2 class="font-black text-slate-800 uppercase text-sm tracking-tight">Preferensi Engine</h2>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="label-style">Auto-Sleep Kamera (Detik)</label>
+                    <input type="number" id="cfg-sleep" class="input-field">
+                </div>
+                <div class="flex items-center justify-between px-4 py-2 bg-slate-50 rounded-2xl">
+                    <span class="text-[10px] font-black text-slate-500 uppercase">Voice Greeting</span>
+                    <input type="checkbox" id="cfg-voice" class="w-5 h-5 accent-blue-600">
+                </div>
+            </div>
+        </section>
+
+        <div class="flex gap-4">
+            <button onclick="window.location.href='dasbodadmin.html'" class="flex-1 bg-white border border-slate-200 text-slate-400 py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest active:scale-95">Batal</button>
+            <button onclick="saveSettings()" class="flex-[2] bg-blue-600 text-white py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-100 active:scale-95">Simpan</button>
+        </div>
+    </main>
+
+    <script>
+        const DEFAULT_CONFIG = {
+            gpsEnabled: true,
+            lat: -2.712345, 
+            lng: 116.123456, 
+            radius: 50,
+            sleep: 120,
+            voice: true,
+            api: "https://script.google.com/macros/s/AKfycbzHHaHNY3KKqftUB4DkSKof4uG15dRl61AHqURfpUMpui9npiAfY6J6jURHc4n0QJXO/exec"
+        };
+
+        window.onload = () => {
+            loadCurrentSettings();
+        };
+
+        function loadCurrentSettings() {
+            const saved = JSON.parse(localStorage.getItem('masook_config') || JSON.stringify(DEFAULT_CONFIG));
+            document.getElementById('cfg-gps-status').checked = saved.gpsEnabled;
+            document.getElementById('cfg-lat').value = saved.lat;
+            document.getElementById('cfg-lng').value = saved.lng;
+            document.getElementById('cfg-radius').value = saved.radius;
+            document.getElementById('cfg-sleep').value = saved.sleep;
+            document.getElementById('cfg-voice').checked = saved.voice;
+            toggleGpsFields();
+        }
+
+        function toggleGpsFields() {
+            const isEnabled = document.getElementById('cfg-gps-status').checked;
+            const fields = document.getElementById('gps-fields');
+            fields.style.opacity = isEnabled ? "1" : "0.3";
+            fields.style.pointerEvents = isEnabled ? "auto" : "none";
+        }
+
+        function saveSettings() {
+            const config = {
+                gpsEnabled: document.getElementById('cfg-gps-status').checked,
+                lat: document.getElementById('cfg-lat').value,
+                lng: document.getElementById('cfg-lng').value,
+                radius: document.getElementById('cfg-radius').value,
+                sleep: document.getElementById('cfg-sleep').value,
+                voice: document.getElementById('cfg-voice').checked,
+                api: DEFAULT_CONFIG.api
+            };
+            localStorage.setItem('masook_config', JSON.stringify(config));
+            alert("Konfigurasi Berhasil Diperbarui!");
+            window.location.href = 'dasbodadmin.html';
+        }
+
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    document.getElementById('cfg-lat').value = pos.coords.latitude;
+                    document.getElementById('cfg-lng').value = pos.coords.longitude;
+                });
+            }
+        }
+    </script>
+</body>
+</html>

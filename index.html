@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masook Puskesmas AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+        .glass-nav { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border-top: 1px solid #e2e8f0; }
+        .action-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .action-card:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="pb-32">
+
+    <header class="p-6 flex justify-between items-center">
+        <div>
+            <h1 class="font-black text-slate-800 text-2xl tracking-tighter italic uppercase">Masook AI</h1>
+            <p class="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-1">UPTD Puskesmas Sampanahan</p>
+        </div>
+        <button onclick="window.location.href='profil.html'" class="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-xl active:scale-90 transition-all">👤</button>
+    </header>
+
+    <main class="flex flex-col items-center px-6">
+        <div class="w-full max-w-sm bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 text-center mb-8">
+            <div id="user-avatar" class="w-24 h-24 bg-slate-100 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl overflow-hidden">
+                <img id="img-profile" src="" class="hidden w-full h-full object-cover">
+                <span id="icon-placeholder">👤</span>
+            </div>
+            <h2 id="display-name" class="font-black text-slate-800 text-xl tracking-tighter uppercase italic">Silahkan Scan Wajah</h2>
+            <p id="display-nip" class="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mt-1">Menunggu Verifikasi...</p>
+            
+            <button onclick="window.location.href='scan.html'" class="mt-8 bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-100 active:scale-95 transition-all">
+                Mulai Pemindaian
+            </button>
+        </div>
+
+        <div class="w-full max-w-sm grid grid-cols-2 gap-4">
+            <button onclick="prosesAbsen('MASUK')" id="btn-masuk" disabled class="action-card bg-slate-200 text-slate-400 p-6 rounded-[2rem] opacity-50 cursor-not-allowed">
+                <p class="font-black text-[9px] uppercase tracking-widest">Absen</p>
+                <h4 class="font-black text-xl italic uppercase">Masuk</h4>
+            </button>
+            <button onclick="prosesAbsen('PULANG')" id="btn-pulang" disabled class="action-card bg-slate-200 text-slate-400 p-6 rounded-[2rem] opacity-50 cursor-not-allowed">
+                <p class="font-black text-[9px] uppercase tracking-widest">Absen</p>
+                <h4 class="font-black text-xl italic uppercase">Pulang</h4>
+            </button>
+        </div>
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 glass-nav p-4 flex justify-around items-center z-50 shadow-2xl">
+        <button onclick="window.location.reload()" class="flex flex-col items-center gap-1">
+            <span class="text-xl">🏠</span>
+            <span class="text-[8px] font-black uppercase text-blue-600">Home</span>
+        </button>
+        <button onclick="window.location.href='daftarpetugas.html'" class="flex flex-col items-center gap-1 opacity-40">
+            <span class="text-xl">👥</span>
+            <span class="text-[8px] font-black uppercase">Petugas</span>
+        </button>
+        <button onclick="window.location.href='dasbodadmin.html'" class="flex flex-col items-center gap-1 opacity-40">
+            <span class="text-xl">⚙️</span>
+            <span class="text-[8px] font-black uppercase">Admin</span>
+        </button>
+    </nav>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbzHHaHNY3KKqftUB4DkSKof4uG15dRl61AHqURfpUMpui9npiAfY6J6jURHc4n0QJXO/exec";
+
+        window.onload = () => {
+            const result = localStorage.getItem('scanned_user');
+            if (result) {
+                const user = JSON.parse(result);
+                updateUI(user);
+                localStorage.removeItem('scanned_user');
+            }
+        };
+
+        function updateUI(user) {
+            document.getElementById('display-name').innerText = user.nama;
+            document.getElementById('display-nip').innerText = "NIP: " + user.nip;
+            document.getElementById('icon-placeholder').classList.add('hidden');
+            const img = document.getElementById('img-profile');
+            img.src = user.foto || ""; img.classList.remove('hidden');
+            
+            // Aktifkan tombol absen
+            const btns = ['btn-masuk', 'btn-pulang'];
+            btns.forEach(id => {
+                const el = document.getElementById(id);
+                el.disabled = false;
+                el.classList.remove('bg-slate-200', 'text-slate-400', 'opacity-50', 'cursor-not-allowed');
+                if(id === 'btn-masuk') el.classList.add('bg-blue-600', 'text-white');
+                else el.classList.add('bg-slate-800', 'text-white');
+            });
+        }
+    </script>
+</body>
+</html>
