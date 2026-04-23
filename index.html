@@ -66,13 +66,14 @@
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzHHaHNY3KKqftUB4DkSKof4uG15dRl61AHqURfpUMpui9npiAfY6J6jURHc4n0QJXO/exec";
+        let currentUser = null;
 
         window.onload = () => {
             const result = localStorage.getItem('scanned_user');
             if (result) {
-                const user = JSON.parse(result);
-                updateUI(user);
-                localStorage.removeItem('scanned_user');
+                currentUser = JSON.parse(result);
+                updateUI(currentUser);
+                // Tidak langsung menghapus scanned_user agar data tetap ada jika halaman ter-refresh sebelum absen
             }
         };
 
@@ -81,9 +82,9 @@
             document.getElementById('display-nip').innerText = "NIP: " + user.nip;
             document.getElementById('icon-placeholder').classList.add('hidden');
             const img = document.getElementById('img-profile');
-            img.src = user.foto || ""; img.classList.remove('hidden');
+            img.src = user.foto || ""; 
+            img.classList.remove('hidden');
             
-            // Aktifkan tombol absen
             const btns = ['btn-masuk', 'btn-pulang'];
             btns.forEach(id => {
                 const el = document.getElementById(id);
@@ -91,6 +92,54 @@
                 el.classList.remove('bg-slate-200', 'text-slate-400', 'opacity-50', 'cursor-not-allowed');
                 if(id === 'btn-masuk') el.classList.add('bg-blue-600', 'text-white');
                 else el.classList.add('bg-slate-800', 'text-white');
+            });
+        }
+
+        async function prosesAbsen(tipe) {
+            if (!currentUser) return alert("Silahkan scan wajah terlebih dahulu!");
+
+            const btn = document.getElementById(tipe === 'MASUK' ? 'btn-masuk' : 'btn-pulang');
+            const originalText = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerText = "MEMPROSES...";
+
+            // Mengambil koordinat GPS sebelum mengirim data ke cloud
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const payload = {
+                    action: "submit_absen",
+                    nip: currentUser.nip,
+                    nama: currentUser.nama,
+                    tipe: tipe,
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude
+                };
+
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    const res = await response.json();
+
+                    if (res.status === "success") {
+                        alert("Absen " + tipe + " Berhasil!");
+                        localStorage.setItem('current_user', JSON.stringify(currentUser));
+                        localStorage.removeItem('scanned_user');
+                        window.location.href = 'profil.html';
+                    } else {
+                        alert("Gagal: " + res.message);
+                    }
+                } catch (e) {
+                    alert("Gangguan koneksi ke server it.barokah.net");
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            }, (err) => {
+                alert("Gagal mendapatkan lokasi GPS. Harap izinkan akses lokasi!");
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             });
         }
     </script>
